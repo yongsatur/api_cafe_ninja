@@ -309,7 +309,7 @@ def add_order_item(request, payload: OrderItemIn):
 
 
 @api.post('/order/{order_item_id}/append', response = OrderItemOut, summary = 'Увеличить количество позиций заказа на 1')
-def add_order_item(request, order_item_id: int):
+def append_order_item(request, order_item_id: int):
     account(request)
     if request.user.has_perm('auth.change_Позиция_заказа'):
         order_item = get_object_or_404(OrderItem, id = order_item_id)
