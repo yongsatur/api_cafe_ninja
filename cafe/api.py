@@ -176,7 +176,7 @@ def delete_table(request, table_id: int):
     return {'Сообщение': 'Столик был удален!'}
 
 
-@api.post(' /tables/{table_id}/change_status', response = TableOut, summary = 'Изменить статус столика')
+@api.post('/tables/{table_id}/change_status', response = TableOut, summary = 'Изменить статус столика')
 def change_table_status(request, table_id: int, status_id: int):
     account(request)
     if request.user.has_perm('auth.change_Столик'):
