@@ -57,7 +57,7 @@ class Table(models.Model):
         verbose_name_plural = 'Столики'
 
     def __str__(self):
-        return self.number
+        return str(self.number)
     
 
 class Reservation(models.Model):

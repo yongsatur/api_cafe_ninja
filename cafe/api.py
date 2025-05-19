@@ -159,6 +159,7 @@ def create_table(request, payload: TableIn):
         payload_dict = payload.dict()
         status = get_object_or_404(TableStatus, id = payload_dict.pop('status'))
         table = Table(**payload_dict, status = status)
+        table.save()
     else:
         raise HttpError(403, 'У вас недостаточно прав!')
     return table
@@ -175,7 +176,7 @@ def delete_table(request, table_id: int):
     return {'Сообщение': 'Столик был удален!'}
 
 
-@api.post(' /tables/{table_id}/change_status ', response = TableOut, summary = 'Изменить статус столика')
+@api.post(' /tables/{table_id}/change_status', response = TableOut, summary = 'Изменить статус столика')
 def change_table_status(request, table_id: int, status_id: int):
     account(request)
     if request.user.has_perm('auth.change_Столик'):
@@ -207,6 +208,7 @@ def create_reservation(request, payload: ReservationIn):
         payload_dict = payload.dict()
         table = get_object_or_404(Table, id = payload_dict.pop('table'))
         reservation = Reservation(**payload_dict, table = table)
+        reservation.save()
     else:
         raise HttpError(403, 'У вас недостаточно прав!')
     return reservation
@@ -371,6 +373,7 @@ def create_payment(request, payload: PaymentIn):
         payload_dict = payload.dict()
         order = get_object_or_404(Order, id = payload_dict.pop('order'))
         payment = Payment(**payload_dict, order = order)
+        payment.save()
     else:
         raise HttpError(403, 'У вас недостаточно прав!')
     return payment
