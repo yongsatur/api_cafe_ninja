@@ -34,7 +34,7 @@ class BasicAuth(HttpBasicAuth):
             return user
         raise AuthenticationError('Ошибка авторизации!')
     
-@api.get("/basic", auth = BasicAuth(), summary = 'Авторизация сотрудника')
+@api.get('/basic', auth = BasicAuth(), summary = 'Авторизация сотрудника')
 def authentication(request):
     return { 'Сообщение': 'Пользователь авторизован!', 'Логин пользователя': request.auth.username }
 
@@ -50,14 +50,21 @@ def get_categories(request):
 @api.post('/categories', response = CategoryOut, summary = 'Добавить категорию')
 @permission_required('auth.add_Категория', raise_exception = True)
 def create_category(request, payload: CategoryIn):
-    return Category.objects.create(**payload.dict())
+    try:
+        return Category.objects.create(**payload.dict())
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
+    
 
 
 @api.delete('/categories/{category_id}', summary = 'Удалить категорию')
 @permission_required('auth.delete_Категория', raise_exception = True)
 def delete_category(request, category_id: int):
-    category = get_object_or_404(Category, id = category_id)
-    category.delete()
+    try:
+        category = get_object_or_404(Category, id = category_id)
+        category.delete()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return {'Сообщение': 'Категория была удалена!'}
 
 
@@ -88,32 +95,41 @@ def menu_sort(request, category_id: int, sort: str = Query(None, description = '
 @api.post('/menu', response = MenuOut, summary = 'Добавить позицию меню')
 @permission_required('auth.add_Позиция_меню', raise_exception = True)
 def create_menu(request, payload: MenuIn, image: UploadedFile = File(...)):
-    payload_dict = payload.dict()
-    category = get_object_or_404(Category, id = payload_dict.pop('category'))
-    menu = Menu(**payload_dict, category = category)
-    menu.image.save(image.name, image)
+    try:
+        payload_dict = payload.dict()
+        category = get_object_or_404(Category, id = payload_dict.pop('category'))
+        menu = Menu(**payload_dict, category = category)
+        menu.image.save(image.name, image)
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return menu
 
 
-@api.put('/menu/{menu_id}', response = MenuOut, summary = 'Изменить информацию о позиции меню')
+@api.post('/menu/{menu_id}', response = MenuOut, summary = 'Изменить информацию о позиции меню')
 @permission_required('auth.change_Позиция_меню', raise_exception = True)
 def update_menu(request, menu_id: int, payload: MenuIn):
-    menu = get_object_or_404(Menu, id = menu_id)
-    for attribute, value in payload.dict().items():
-        if attribute == 'category':
-            category = get_object_or_404(Category, id = value)
-            setattr(menu, attribute, category)
-        else:
-            setattr(menu, attribute, value)
-    menu.save()
+    try:
+        menu = get_object_or_404(Menu, id = menu_id)
+        for attribute, value in payload.dict().items():
+            if attribute == 'category':
+                category = get_object_or_404(Category, id = value)
+                setattr(menu, attribute, category)
+            else:
+                setattr(menu, attribute, value)
+        menu.save()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return menu
 
 
 @api.delete('/menu/{menu_id}', summary = 'Удалить позицию меню')
 @permission_required('auth.delete_Позиция_меню', raise_exception = True)
 def delete_menu(request, menu_id: int):
-    menu = get_object_or_404(Menu, id = menu_id)
-    menu.delete()
+    try:
+        menu = get_object_or_404(Menu, id = menu_id)
+        menu.delete()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return {'Сообщение': 'Позиция меню была удалена!'}
 
 
@@ -135,28 +151,37 @@ def get_tables(request):
 @api.post('/tables', response = TableOut, summary = 'Добавить столик')
 @permission_required('auth.add_Столик', raise_exception = True)
 def create_table(request, payload: TableIn):
-    payload_dict = payload.dict()
-    status = get_object_or_404(TableStatus, id = payload_dict.pop('status'))
-    table = Table(**payload_dict, status = status)
-    table.save()
+    try:
+        payload_dict = payload.dict()
+        status = get_object_or_404(TableStatus, id = payload_dict.pop('status'))
+        table = Table(**payload_dict, status = status)
+        table.save()
+    except:
+        raise HttpError(406, 'Столик с данным номером уже существует!')
     return table
 
 
 @api.delete('/tables/{table_id}', summary = 'Удалить столик')
 @permission_required('auth.delete_Столик', raise_exception = True)
 def delete_table(request, table_id: int):
-    table = get_object_or_404(Table, id = table_id)
-    table.delete()
+    try:
+        table = get_object_or_404(Table, id = table_id)
+        table.delete()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return {'Сообщение': 'Столик был удален!'}
 
 
 @api.post('/tables/{table_id}/change_status', response = TableOut, summary = 'Изменить статус столика')
 @permission_required('auth.change_Столик', raise_exception = True)
 def change_table_status(request, table_id: int, status_id: int):
-    table = get_object_or_404(Table, id = table_id)
-    status = get_object_or_404(TableStatus, id = status_id)
-    table.status = status
-    table.save()
+    try:
+        table = get_object_or_404(Table, id = table_id)
+        status = get_object_or_404(TableStatus, id = status_id)
+        table.status = status
+        table.save()
+    except:
+        raise HttpError(400, 'Некорректный запрос!')
     return table
 
 
@@ -172,38 +197,47 @@ def get_reservations(request):
 @api.post('/reservations', response = ReservationOut, summary = 'Добавить бронирование')
 @permission_required('auth.add_Бронирование', raise_exception = True)
 def create_reservation(request, payload: ReservationIn):
-    payload_dict = payload.dict()
-    table = get_object_or_404(Table, id = payload_dict.pop('table'))
-    if table.status == 3:
-        reservation = Reservation(**payload_dict, table = table)
-    else:
-        raise HttpError(406, 'Столик уже занят!')
-    reservation.save()
+    try:
+        payload_dict = payload.dict()
+        table = get_object_or_404(Table, id = payload_dict.pop('table'))
+        if table.status == 3:
+            reservation = Reservation(**payload_dict, table = table)
+        else:
+            raise HttpError(406, 'Столик уже занят!')
+        reservation.save()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return reservation
 
 
-@api.put('/reservations/{reservation_id}', response = ReservationOut, summary = 'Изменить информацию о бронировании')
+@api.post('/reservations/{reservation_id}', response = ReservationOut, summary = 'Изменить информацию о бронировании')
 @permission_required('auth.change_Бронирование', raise_exception = True)
 def update_reservation(request, reservation_id: int, payload: ReservationIn):
-    reservation = get_object_or_404(Reservation, id = reservation_id)
-    for attribute, value in payload.dict().items():
-        if attribute == 'table':
-            table = get_object_or_404(Table, id = value)
-            if table.status == 3:
-                setattr(reservation, attribute, table)
+    try:
+        reservation = get_object_or_404(Reservation, id = reservation_id)
+        for attribute, value in payload.dict().items():
+            if attribute == 'table':
+                table = get_object_or_404(Table, id = value)
+                if table.status == 3:
+                    setattr(reservation, attribute, table)
+                else:
+                    raise HttpError(406, 'Столик уже занят!')
             else:
-                raise HttpError(406, 'Столик уже занят!')
-        else:
-            setattr(reservation, attribute, value)
-    reservation.save()
+                setattr(reservation, attribute, value)
+        reservation.save()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return reservation
 
 
 @api.delete('/reservations/{reservation_id}', summary = 'Удалить бронирование')
 @permission_required('auth.delete_Бронирование', raise_exception = True)
 def delete_reservation(request, reservation_id: int):
-    reservation = get_object_or_404(Reservation, id = reservation_id)
-    reservation.delete()
+    try:
+        reservation = get_object_or_404(Reservation, id = reservation_id)
+        reservation.delete()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return {'Сообщение': 'Бронирование было удалено!'}
 
 
@@ -219,73 +253,91 @@ def get_orders(request):
 @api.get('/order/{order_id}/', response = List[OrderItemOut], summary = 'Получить информацию о заказе')
 @permission_required('auth.view_Позиция_заказа', raise_exception = True)
 def get_order(request, order_id: int):
-    order = get_object_or_404(Order, id = order_id)
-    order_items = OrderItem.objects.filter(order = order)
+    try:
+        order = get_object_or_404(Order, id = order_id)
+        order_items = OrderItem.objects.filter(order = order)
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return order_items
 
 
 @api.post('/order', response = OrderOut, summary = 'Создать заказ')
 @permission_required('auth.add_Заказ', raise_exception = True)
 def create_order(request, payload: OrderIn):
-    payload_dict = payload.dict()
-    status = get_object_or_404(OrderStatus, id = payload_dict.pop('status'))
-    table = get_object_or_404(Table, id = payload_dict.pop('table'))
     try:
-        reservation = Reservation.objects.get(id = payload_dict.pop('reservation'))
-    except Reservation.DoesNotExist:
-        reservation = None
+        payload_dict = payload.dict()
+        status = get_object_or_404(OrderStatus, id = payload_dict.pop('status'))
+        table = get_object_or_404(Table, id = payload_dict.pop('table'))
+        try:
+            reservation = Reservation.objects.get(id = payload_dict.pop('reservation'))
+        except Reservation.DoesNotExist:
+            reservation = None
 
-    if reservation is not None:
-        order = Order(**payload_dict, table = table, status = status, reservation = reservation) 
-    else:
-        order = Order(**payload_dict, table = table, status = status)     
-    order.save()
+        if reservation is not None:
+            order = Order(**payload_dict, table = table, status = status, reservation = reservation) 
+        else:
+            order = Order(**payload_dict, table = table, status = status)     
+        order.save()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return order
 
 
 @api.post('/order/add_item', response = OrderItemOut, summary = 'Добавить позицию заказа в заказ')
 @permission_required('auth.add_Позиция_заказа', raise_exception = True)
 def add_order_item(request, payload: OrderItemIn):
-    payload_dict = payload.dict()
-    order = get_object_or_404(Order, id = payload_dict.pop('order'))
-    menu = get_object_or_404(Menu, id = payload_dict.pop('menu'))
-    order_item, created = OrderItem.objects.get_or_create(order = order, menu = menu, **payload_dict)
-    if not created:
-        order_item.quantity += 1
-    order_item.price = order_item.get_amount()
-    order_item.save() 
+    try:
+        payload_dict = payload.dict()
+        order = get_object_or_404(Order, id = payload_dict.pop('order'))
+        menu = get_object_or_404(Menu, id = payload_dict.pop('menu'))
+        order_item, created = OrderItem.objects.get_or_create(order = order, menu = menu, **payload_dict)
+        if not created:
+            order_item.quantity += 1
+        order_item.price = order_item.get_amount()
+        order_item.save() 
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return order_item
 
 
 @api.post('/order/{order_item_id}/append', response = OrderItemOut, summary = 'Увеличить количество позиций заказа на 1')
 @permission_required('auth.change_Позиция_заказа', raise_exception = True)
 def append_order_item(request, order_item_id: int):
-    order_item = get_object_or_404(OrderItem, id = order_item_id)
-    order_item.quantity += 1
-    order_item.save()
+    try:
+        order_item = get_object_or_404(OrderItem, id = order_item_id)
+        order_item.quantity += 1
+        order_item.save()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return order_item
 
 
 @api.post('/order/{order_item_id}/delete', response = OrderItemOut, summary = 'Уменьшить количество позиций заказа на 1')
 @permission_required('auth.change_Позиция_заказа', raise_exception = True)
 def delete_order_item(request, order_item_id: int):
-    order_item = get_object_or_404(OrderItem, id = order_item_id)
-    order_item.quantity -= 1
-    if order_item.quantity == 0:
-        order_item.delete()
-    else:
+    try:
+        order_item = get_object_or_404(OrderItem, id = order_item_id)
+        order_item.quantity -= 1
+        if order_item.quantity == 0:
+            order_item.delete()
+        else:
+            order_item.save()
         order_item.save()
-    order_item.save()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return order_item
 
 
 @api.post('/order/{order_id}/change_status', response = OrderOut, summary = 'Изменить статус заказа')
 @permission_required('auth.change_Заказ', raise_exception = True)
 def change_order_status(request, order_id: int, status_id: int):
-    order = get_object_or_404(Order, id = order_id)
-    status = get_object_or_404(OrderStatus, id = status_id)
-    order.status = status
-    order.save()
+    try:
+        order = get_object_or_404(Order, id = order_id)
+        status = get_object_or_404(OrderStatus, id = status_id)
+        order.status = status
+        order.save()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return order
 
 
@@ -301,23 +353,32 @@ def get_payments(request):
 @api.get('/payments/{payment_id}', response = PaymentOut, summary = 'Получить информацию о чеке на оплату')
 @permission_required('auth.view_Оплата', raise_exception = True)
 def get_payment(request, payment_id: int):
-    return get_object_or_404(Payment, id = payment_id)
+    try:
+        return get_object_or_404(Payment, id = payment_id)
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')   
 
 
 @api.post('/payments', response = PaymentOut, summary = 'Добавить чек на оплату')
 @permission_required('auth.add_Оплата', raise_exception = True)
 def create_payment(request, payload: PaymentIn):
-    payload_dict = payload.dict()
-    order = get_object_or_404(Order, id = payload_dict.pop('order'))
-    payment = Payment(**payload_dict, order = order)
-    payment.save()
+    try:
+        payload_dict = payload.dict()
+        order = get_object_or_404(Order, id = payload_dict.pop('order'))
+        payment = Payment(**payload_dict, order = order)
+        payment.save()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return payment
 
 
-@api.get('/payments/{payment_id}/change_status', response = PaymentOut, summary = 'Изменить статус оплаты')
+@api.post('/payments/{payment_id}/change_status', response = PaymentOut, summary = 'Изменить статус оплаты')
 @permission_required('auth.change_Оплата', raise_exception = True)
 def change_payment_status(request, payment_id: int):
-    payment = get_object_or_404(Payment, id = payment_id)
-    payment.status = True
-    payment.save()
+    try:
+        payment = get_object_or_404(Payment, id = payment_id)
+        payment.status = True
+        payment.save()
+    except:
+        raise HttpError(400, 'Неккоректный запрос!')
     return payment
