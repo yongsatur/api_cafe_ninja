@@ -1,10 +1,5 @@
-from xmlrpc.client import _datetime
 from ninja import Schema
-
-
-class UserAuthentication(Schema):
-    username: str
-    password: str
+from datetime import datetime
 
 
 class CategoryIn(Schema):
@@ -55,7 +50,7 @@ class ReservationIn(Schema):
     table: int
     client_name: str
     client_phone: str
-    datetime: _datetime
+    datetime: str
     quest_count: int
     comment: str
 
@@ -64,7 +59,7 @@ class ReservationOut(Schema):
     table: TableOut
     client_name: str
     client_phone: str
-    datetime: _datetime
+    datetime: datetime
     quest_count: int
     comment: str 
 
