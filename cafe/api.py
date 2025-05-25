@@ -34,7 +34,7 @@ class BasicAuth(HttpBasicAuth):
             return user
         raise AuthenticationError('Ошибка авторизации!')
     
-@api.get('/basic', auth = BasicAuth(), summary = 'Авторизация сотрудника')
+@api.get('/basic', auth = BasicAuth(), summary = 'Проверка авторизации сотрудника')
 def authentication(request):
     return { 'Сообщение': 'Пользователь авторизован!', 'Логин пользователя': request.auth.username }
 
@@ -105,7 +105,7 @@ def create_menu(request, payload: MenuIn, image: UploadedFile = File(...)):
     return menu
 
 
-@api.post('/menu/{menu_id}', response = MenuOut, summary = 'Изменить информацию о позиции меню')
+@api.put('/menu/{menu_id}', response = MenuOut, summary = 'Изменить информацию о позиции меню')
 @permission_required('auth.change_Позиция_меню', raise_exception = True)
 def update_menu(request, menu_id: int, payload: MenuIn):
     try:
@@ -200,7 +200,9 @@ def create_reservation(request, payload: ReservationIn):
     try:
         payload_dict = payload.dict()
         table = get_object_or_404(Table, id = payload_dict.pop('table'))
-        if table.status == 3:
+        if table.status.id == 3:
+            status = get_object_or_404(TableStatus, id = 2)
+            table.status = status
             reservation = Reservation(**payload_dict, table = table)
         else:
             raise HttpError(406, 'Столик уже занят!')
@@ -210,23 +212,22 @@ def create_reservation(request, payload: ReservationIn):
     return reservation
 
 
-@api.post('/reservations/{reservation_id}', response = ReservationOut, summary = 'Изменить информацию о бронировании')
+@api.put('/reservations/{reservation_id}', response = ReservationOut, summary = 'Изменить информацию о бронировании')
 @permission_required('auth.change_Бронирование', raise_exception = True)
 def update_reservation(request, reservation_id: int, payload: ReservationIn):
-    try:
-        reservation = get_object_or_404(Reservation, id = reservation_id)
-        for attribute, value in payload.dict().items():
-            if attribute == 'table':
-                table = get_object_or_404(Table, id = value)
-                if table.status == 3:
-                    setattr(reservation, attribute, table)
-                else:
-                    raise HttpError(406, 'Столик уже занят!')
+    reservation = get_object_or_404(Reservation, id = reservation_id)
+    for attribute, value in payload.dict().items():
+        if attribute == 'table':
+            table = get_object_or_404(Table, id = value)
+            if table.status.id == 3:
+                status = get_object_or_404(TableStatus, id = 2)
+                table.status = status
+                setattr(reservation, attribute, table)
             else:
-                setattr(reservation, attribute, value)
+                raise HttpError(406, 'Столик уже занят!')
+        else:
+            setattr(reservation, attribute, value)
         reservation.save()
-    except:
-        raise HttpError(400, 'Неккоректный запрос!')
     return reservation
 
 
@@ -272,6 +273,9 @@ def create_order(request, payload: OrderIn):
             reservation = Reservation.objects.get(id = payload_dict.pop('reservation'))
         except Reservation.DoesNotExist:
             reservation = None
+
+        if table.status.id != 3:
+            raise HttpError(406, 'Столик уже занят!')            
 
         if reservation is not None:
             order = Order(**payload_dict, table = table, status = status, reservation = reservation) 

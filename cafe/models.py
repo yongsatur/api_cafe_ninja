@@ -57,7 +57,7 @@ class Table(models.Model):
         verbose_name_plural = 'Столики'
 
     def __str__(self):
-        return str(self.number)
+        return 'Столик №' + str(self.number)
     
 
 class Reservation(models.Model):
@@ -74,7 +74,7 @@ class Reservation(models.Model):
         verbose_name_plural = 'Бронирования'
 
     def __str__(self):
-        return self.table + ' - ' + self.client_name
+        return self.client_name + ' (' + self.client_phone + ')'
 
 
 class OrderStatus(models.Model):
@@ -90,7 +90,7 @@ class OrderStatus(models.Model):
 
 class Order(models.Model):
     table = models.ForeignKey(Table, verbose_name = 'Столик', on_delete = models.CASCADE)
-    reservation = models.OneToOneField(Reservation, verbose_name = 'Бронирование', on_delete = models.CASCADE, blank = True, null = True)
+    reservation = models.OneToOneField(Reservation, verbose_name = 'Клиент', on_delete = models.CASCADE, blank = True, null = True)
     status = models.ForeignKey(OrderStatus, verbose_name = 'Статус', on_delete = models.CASCADE)
     totalAmount = models.DecimalField(verbose_name = 'Итоговая стоимость', max_digits = 10, decimal_places = 2)
     created_at = models.DateTimeField(verbose_name = 'Дата создания', auto_now_add = True)
@@ -100,11 +100,11 @@ class Order(models.Model):
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
 
-    def get_total_amount(self):
-        return sum(item.get_amount() for item in self.order_items.all())
-    
     def __str__(self):
-        return self.table + ' - ' + self.status
+        return 'Заказ №' + str(self.id)
+
+    def get_total_amount(self):
+        return sum(item.get_amount() for item in self.order_items.all())  
 
 
 class OrderItem(models.Model):
@@ -131,4 +131,4 @@ class Payment(models.Model):
         verbose_name_plural = 'Оплаты'
 
     def __str__(self):
-        return self.order.table + ' - ' + self.status
+        return 'Оплата для заказа №' + str(self.order.id)

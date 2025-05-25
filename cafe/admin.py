@@ -44,3 +44,8 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ['table', 'reservation', 'totalAmount', 'status', 'created_at',]
     inlines = [OrderItemAdmin, PaymentAdmin]
 admin.site.register(Order, OrderAdmin)
+
+
+class PaymentsAdmin(admin.ModelAdmin):
+    list_display = ['order', 'status']
+admin.site.register(Payment, PaymentsAdmin)
