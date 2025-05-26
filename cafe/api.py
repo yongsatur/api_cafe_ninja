@@ -4,27 +4,15 @@ from ninja.errors import HttpError, AuthenticationError
 
 from typing import List
 
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
-from django.core.exceptions import PermissionDenied
-from django.contrib.auth.decorators import permission_required
 
 from .models import Category, Menu, Table, Reservation, Order, OrderItem, \
     OrderStatus, TableStatus, Payment
 from .schemas import CategoryIn, CategoryOut, MenuIn, MenuOut, TableIn, \
     TableOut, ReservationIn, ReservationOut, OrderIn, OrderOut, \
     OrderItemIn, OrderItemOut, PaymentIn, PaymentOut
-
-
-api = NinjaAPI(csrf = True)
-
-@api.exception_handler(PermissionDenied)
-def permission_error(request, e):
-    return HttpResponse('У вас недостаточно прав для совершения данной операции!', status = 403)
-
-
-''' API для авторизации '''
+from .decorators import *
 
 
 class BasicAuth(HttpBasicAuth):
@@ -33,9 +21,16 @@ class BasicAuth(HttpBasicAuth):
         if user:
             return user
         raise AuthenticationError('Ошибка авторизации!')
+
+
+api = NinjaAPI(csrf = True, auth = BasicAuth())
+
+
+''' API для авторизации '''
     
+
 @api.get('/basic', auth = BasicAuth(), summary = 'Проверка авторизации сотрудника')
-def authentication(request):
+def basic(request):
     return { 'Сообщение': 'Пользователь авторизован!', 'Логин пользователя': request.auth.username }
 
 
@@ -48,7 +43,7 @@ def get_categories(request):
 
 
 @api.post('/categories', response = CategoryOut, summary = 'Добавить категорию')
-@permission_required('auth.add_Категория', raise_exception = True)
+@check_permission('cafe.add_category', raise_exception = True, use_auth = True)
 def create_category(request, payload: CategoryIn):
     try:
         return Category.objects.create(**payload.dict())
@@ -58,7 +53,7 @@ def create_category(request, payload: CategoryIn):
 
 
 @api.delete('/categories/{category_id}', summary = 'Удалить категорию')
-@permission_required('auth.delete_Категория', raise_exception = True)
+@check_permission('cafe.delete_category', raise_exception = True, use_auth = True)
 def delete_category(request, category_id: int):
     try:
         category = get_object_or_404(Category, id = category_id)
@@ -93,7 +88,7 @@ def menu_sort(request, category_id: int, sort: str = Query(None, description = '
 
 
 @api.post('/menu', response = MenuOut, summary = 'Добавить позицию меню')
-@permission_required('auth.add_Позиция_меню', raise_exception = True)
+@check_permission('cafe.add_menu', raise_exception = True, use_auth = True)
 def create_menu(request, payload: MenuIn, image: UploadedFile = File(...)):
     try:
         payload_dict = payload.dict()
@@ -106,7 +101,7 @@ def create_menu(request, payload: MenuIn, image: UploadedFile = File(...)):
 
 
 @api.put('/menu/{menu_id}', response = MenuOut, summary = 'Изменить информацию о позиции меню')
-@permission_required('auth.change_Позиция_меню', raise_exception = True)
+@check_permission('cafe.change_menu', raise_exception = True, use_auth = True)
 def update_menu(request, menu_id: int, payload: MenuIn):
     try:
         menu = get_object_or_404(Menu, id = menu_id)
@@ -123,7 +118,7 @@ def update_menu(request, menu_id: int, payload: MenuIn):
 
 
 @api.delete('/menu/{menu_id}', summary = 'Удалить позицию меню')
-@permission_required('auth.delete_Позиция_меню', raise_exception = True)
+@check_permission('cafe.delete_menu', raise_exception = True, use_auth = True)
 def delete_menu(request, menu_id: int):
     try:
         menu = get_object_or_404(Menu, id = menu_id)
@@ -143,13 +138,13 @@ def search_menu(request, category_id: int, search: str = Query(None, description
 
 
 @api.get('/tables', response = List[TableOut], summary = 'Получить список столиков')
-@permission_required('auth.view_Столик', raise_exception = True)
+@check_permission('cafe.view_table', raise_exception = True, use_auth = True)
 def get_tables(request):
     return Table.objects.all()
 
 
 @api.post('/tables', response = TableOut, summary = 'Добавить столик')
-@permission_required('auth.add_Столик', raise_exception = True)
+@check_permission('cafe.add_table', raise_exception = True, use_auth = True)
 def create_table(request, payload: TableIn):
     try:
         payload_dict = payload.dict()
@@ -162,7 +157,7 @@ def create_table(request, payload: TableIn):
 
 
 @api.delete('/tables/{table_id}', summary = 'Удалить столик')
-@permission_required('auth.delete_Столик', raise_exception = True)
+@check_permission('cafe.delete_table', raise_exception = True, use_auth = True)
 def delete_table(request, table_id: int):
     try:
         table = get_object_or_404(Table, id = table_id)
@@ -173,7 +168,7 @@ def delete_table(request, table_id: int):
 
 
 @api.post('/tables/{table_id}/change_status', response = TableOut, summary = 'Изменить статус столика')
-@permission_required('auth.change_Столик', raise_exception = True)
+@check_permission('cafe.change_table', raise_exception = True, use_auth = True)
 def change_table_status(request, table_id: int, status_id: int):
     try:
         table = get_object_or_404(Table, id = table_id)
@@ -189,13 +184,13 @@ def change_table_status(request, table_id: int, status_id: int):
 
 
 @api.get('/reservations', response = List[ReservationOut], summary = 'Получить список бронирований')
-@permission_required('auth.view_Бронирование', raise_exception = True)
+@check_permission('cafe.view_reservation', raise_exception = True, use_auth = True)
 def get_reservations(request):
     return Reservation.objects.all()
 
 
 @api.post('/reservations', response = ReservationOut, summary = 'Добавить бронирование')
-@permission_required('auth.add_Бронирование', raise_exception = True)
+@check_permission('cafe.add_reservation', raise_exception = True, use_auth = True)
 def create_reservation(request, payload: ReservationIn):
     try:
         payload_dict = payload.dict()
@@ -213,7 +208,7 @@ def create_reservation(request, payload: ReservationIn):
 
 
 @api.put('/reservations/{reservation_id}', response = ReservationOut, summary = 'Изменить информацию о бронировании')
-@permission_required('auth.change_Бронирование', raise_exception = True)
+@check_permission('cafe.change_reservation', raise_exception = True, use_auth = True)
 def update_reservation(request, reservation_id: int, payload: ReservationIn):
     reservation = get_object_or_404(Reservation, id = reservation_id)
     for attribute, value in payload.dict().items():
@@ -232,7 +227,7 @@ def update_reservation(request, reservation_id: int, payload: ReservationIn):
 
 
 @api.delete('/reservations/{reservation_id}', summary = 'Удалить бронирование')
-@permission_required('auth.delete_Бронирование', raise_exception = True)
+@check_permission('cafe.delete_reservation', raise_exception = True, use_auth = True)
 def delete_reservation(request, reservation_id: int):
     try:
         reservation = get_object_or_404(Reservation, id = reservation_id)
@@ -246,13 +241,13 @@ def delete_reservation(request, reservation_id: int):
 
 
 @api.get('/orders', response = List[OrderItemOut], summary = 'Получить список заказов')
-@permission_required('auth.view_Заказ', raise_exception = True)
+@check_permission('cafe.view_orderitem', raise_exception = True, use_auth = True)
 def get_orders(request):
     return OrderItem.objects.all()
 
 
 @api.get('/order/{order_id}/', response = List[OrderItemOut], summary = 'Получить информацию о заказе')
-@permission_required('auth.view_Позиция_заказа', raise_exception = True)
+@check_permission('cafe.view_orderitem', raise_exception = True, use_auth = True)
 def get_order(request, order_id: int):
     try:
         order = get_object_or_404(Order, id = order_id)
@@ -263,7 +258,7 @@ def get_order(request, order_id: int):
 
 
 @api.post('/order', response = OrderOut, summary = 'Создать заказ')
-@permission_required('auth.add_Заказ', raise_exception = True)
+@check_permission('cafe.add_order', raise_exception = True, use_auth = True)
 def create_order(request, payload: OrderIn):
     try:
         payload_dict = payload.dict()
@@ -288,7 +283,7 @@ def create_order(request, payload: OrderIn):
 
 
 @api.post('/order/add_item', response = OrderItemOut, summary = 'Добавить позицию заказа в заказ')
-@permission_required('auth.add_Позиция_заказа', raise_exception = True)
+@check_permission('cafe.add_orderitem', raise_exception = True, use_auth = True)
 def add_order_item(request, payload: OrderItemIn):
     try:
         payload_dict = payload.dict()
@@ -305,7 +300,7 @@ def add_order_item(request, payload: OrderItemIn):
 
 
 @api.post('/order/{order_item_id}/append', response = OrderItemOut, summary = 'Увеличить количество позиций заказа на 1')
-@permission_required('auth.change_Позиция_заказа', raise_exception = True)
+@check_permission('cafe.change_orderitem', raise_exception = True, use_auth = True)
 def append_order_item(request, order_item_id: int):
     try:
         order_item = get_object_or_404(OrderItem, id = order_item_id)
@@ -317,7 +312,7 @@ def append_order_item(request, order_item_id: int):
 
 
 @api.post('/order/{order_item_id}/delete', response = OrderItemOut, summary = 'Уменьшить количество позиций заказа на 1')
-@permission_required('auth.change_Позиция_заказа', raise_exception = True)
+@check_permission('cafe.change_orderitem', raise_exception = True, use_auth = True)
 def delete_order_item(request, order_item_id: int):
     try:
         order_item = get_object_or_404(OrderItem, id = order_item_id)
@@ -333,7 +328,7 @@ def delete_order_item(request, order_item_id: int):
 
 
 @api.post('/order/{order_id}/change_status', response = OrderOut, summary = 'Изменить статус заказа')
-@permission_required('auth.change_Заказ', raise_exception = True)
+@check_permission('cafe.change_order', raise_exception = True, use_auth = True)
 def change_order_status(request, order_id: int, status_id: int):
     try:
         order = get_object_or_404(Order, id = order_id)
@@ -349,13 +344,13 @@ def change_order_status(request, order_id: int, status_id: int):
 
 
 @api.get('/payments', response = List[PaymentOut], summary = 'Получить список всех чеков на оплату')
-@permission_required('auth.view_Оплата', raise_exception = True)
+@check_permission('cafe.view_payment', raise_exception = True, use_auth = True)
 def get_payments(request):
     return Payment.objects.all()
 
 
 @api.get('/payments/{payment_id}', response = PaymentOut, summary = 'Получить информацию о чеке на оплату')
-@permission_required('auth.view_Оплата', raise_exception = True)
+@check_permission('cafe.view_payment', raise_exception = True, use_auth = True)
 def get_payment(request, payment_id: int):
     try:
         return get_object_or_404(Payment, id = payment_id)
@@ -364,7 +359,7 @@ def get_payment(request, payment_id: int):
 
 
 @api.post('/payments', response = PaymentOut, summary = 'Добавить чек на оплату')
-@permission_required('auth.add_Оплата', raise_exception = True)
+@check_permission('cafe.add_payment', raise_exception = True, use_auth = True)
 def create_payment(request, payload: PaymentIn):
     try:
         payload_dict = payload.dict()
@@ -377,7 +372,7 @@ def create_payment(request, payload: PaymentIn):
 
 
 @api.post('/payments/{payment_id}/change_status', response = PaymentOut, summary = 'Изменить статус оплаты')
-@permission_required('auth.change_Оплата', raise_exception = True)
+@check_permission('cafe.change_payment', raise_exception = True, use_auth = True)
 def change_payment_status(request, payment_id: int):
     try:
         payment = get_object_or_404(Payment, id = payment_id)
