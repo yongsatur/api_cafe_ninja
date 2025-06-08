@@ -1,12 +1,13 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-sc*qgu2c4qm590=cd2#*@ahpy4t!+)1#2sfcbp-^_j#zevf2l^'
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['api-cafe.na4u.ru']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -49,9 +50,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'api_cafe.wsgi.application'
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "c107330_api_cafe_na4u_ru",
+        "USER": "c107330_api_cafe_na4u_ru",
+        "PASSWORD": "XeRyeHisfopuv54",
+        "HOST": "localhost",
     }
 }
 
@@ -70,14 +74,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'Ru-ru'
-
-TIME_ZONE = 'UTC'
-
+LANGUAGE_CODE = 'ru-RU'
+TIME_ZONE = 'Asia/Chita'
 USE_I18N = True
-
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
