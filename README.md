@@ -12,7 +12,7 @@ $`\color{yellow}*`$ Административная панель `Django` дл�
 ## Технологии
 
 $`\color{yellow}*`$ `Python`<br>
-$`\color{yellow}*`$ `Django` · ` DjangoNinja`<br>
+$`\color{yellow}*`$ `Django` · ` Django Ninja`<br>
 $`\color{yellow}*`$ `MySQL`
 
 ## Лицензия
